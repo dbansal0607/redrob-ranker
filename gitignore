@@ -1,0 +1,43 @@
+# Data files — too large for GitHub
+candidates.jsonl
+candidates.jsonl.gz
+*.jsonl
+*.jsonl.gz
+
+# Output files — generated at runtime
+submission.csv
+sample_submission.csv
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Slide images (build artifacts)
+slide-*.jpg
+*.pdf
+build_deck.js
+node_modules/

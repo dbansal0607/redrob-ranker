@@ -1,0 +1,66 @@
+# Redrob Hackathon — Submission Metadata
+# Fill in your actual details before uploading to the portal
+
+team_name: "dhruv-bansal-solo"
+
+primary_contact:
+  name: "Dhruv Bansal"
+  email: "dbansal0607@gmail.com"       # update with actual email
+  phone: "+91-XXXXXXXXXX"              # update with actual phone
+
+team_members:
+  - name: "Dhruv Bansal"
+    email: "dbansal0607@gmail.com"
+    role: "Solo — ML Engineer"
+
+# ── Code and reproducibility ────────────────────────────────────
+github_repo: "https://github.com/dbansal0607/redrob-ranker"
+
+sandbox_link: "https://huggingface.co/spaces/dbansal0607/redrob-ranker"
+# Alternative: Streamlit Cloud or Replit with rank.py loaded
+
+reproduce_command: "python rank.py --candidates ./candidates.jsonl --out ./submission.csv"
+
+# ── Compute environment ─────────────────────────────────────────
+compute:
+  platform: "Local Linux / WSL2 Ubuntu 24.04"
+  cpu_cores: 8
+  ram_gb: 16
+  python_version: "3.12.3"
+  os: "Ubuntu 24.04 LTS (WSL2)"
+  uses_gpu_for_inference: false
+  has_network_during_ranking: false
+  pre_computation_required: false
+  pre_computation_time_minutes: 0
+
+# ── AI tools declaration ────────────────────────────────────────
+ai_tools_used:
+  - "Claude"
+
+ai_usage_summary: |
+  Used Claude for architecture discussion, scoring weight rationale, and
+  code review. All engineering decisions (scoring pillars, weights, token
+  sets, honeypot heuristics) were made by the human and tested against
+  sample candidates. No candidate profile data was fed to any LLM.
+
+# ── Methodology summary ─────────────────────────────────────────
+methodology_summary: |
+  Multi-signal rule-based ranker with five scoring pillars: technical skills
+  (32%), career trajectory (28%), experience band (18%), behavioral availability
+  (14%), and location fit (8%). Skill matching uses both the structured skills
+  array (weighted by proficiency and duration) and free-text career descriptions,
+  catching plain-language candidates who describe production retrieval work
+  without buzzwords. Career scoring applies a hard gate against wrong titles
+  (marketing managers with AI skills get ~0.04 career score) and a consulting
+  ratio penalty for TCS/Infosys/Wipro/Accenture/Cognizant/Capgemini careers.
+  Behavioral signals implement the JD's explicit note that a candidate
+  inactive for 6+ months "is not actually available." Honeypot detection
+  flags four impossible-profile patterns. Total runtime: ~60s on CPU.
+
+# ── Declarations ────────────────────────────────────────────────
+declarations:
+  read_submission_spec: true
+  code_is_original_work: true
+  no_collusion: true
+  honeypot_check_done: true
+  reproduction_tested: true

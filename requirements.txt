@@ -1,0 +1,9 @@
+# Redrob Ranker — Dependencies
+# Standard library only — no third-party packages required for ranking.
+# Python 3.9+ is sufficient.
+#
+# If you want to run the optional analysis notebook, install:
+# pandas>=2.0
+# numpy>=1.24
+#
+# The ranking step itself (rank.py) has zero external dependencies.
