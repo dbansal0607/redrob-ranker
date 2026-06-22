@@ -1,10 +1,12 @@
+import sys
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
+import json
 """
 Unit tests for rank.py
 Run: python test_rank.py
 """
 
-import sys
-import json
 import csv
 import tempfile
 import os
@@ -127,7 +129,7 @@ check("YOE=6 → score 1.0",   rank.score_experience_band(make_candidate(yoe=6.0
 check("YOE=5 → score 0.88",  rank.score_experience_band(make_candidate(yoe=5.0)) == 0.88)
 check("YOE=9 → score 0.88",  rank.score_experience_band(make_candidate(yoe=9.0)) == 0.88)
 check("YOE=2 → score < 0.5", rank.score_experience_band(make_candidate(yoe=2.0)) < 0.5)
-check("YOE=15 → score < 0.4",rank.score_experience_band(make_candidate(yoe=15.0)) < 0.4)
+check("YOE=15 → score < 0.5",rank.score_experience_band(make_candidate(yoe=15.0)) < 0.5)
 
 # ── 3. Career Trajectory — Wrong Title Hard Gate ─────────────────
 print("\n3. Career Trajectory — Wrong Title Gate")
@@ -235,6 +237,8 @@ tmp_out = tmp_in.replace(".jsonl", "_out.csv")
 
 # Run
 import sys
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8")
 sys.argv = ["rank.py", "--candidates", tmp_in, "--out", tmp_out, "--topn", "10"]
 try:
     rank.main()

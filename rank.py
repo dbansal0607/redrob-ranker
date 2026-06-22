@@ -329,13 +329,19 @@ def score_career_trajectory(candidate: dict, full_text: str) -> float:
 
 
 def score_experience_band(candidate: dict) -> float:
+    """
+    Score experience against JD target of 5-9 years (ideal: 6-8).
+    Senior candidates (13+ YOE) are no longer heavily penalized —
+    they may be overqualified but are not disqualified.
+    """
     yoe = candidate.get("profile", {}).get("years_of_experience", 0)
-    if 6.0 <= yoe <= 8.0:   return 1.00
+    if 6.0 <= yoe <= 8.0:            return 1.00  # Sweet spot
     elif 5.0 <= yoe < 6.0 or 8.0 < yoe <= 9.0: return 0.88
     elif 4.0 <= yoe < 5.0 or 9.0 < yoe <= 11.0: return 0.65
-    elif 3.0 <= yoe < 4.0 or 11.0 < yoe <= 13.0: return 0.40
-    elif yoe >= 13.0: return 0.25
-    else: return 0.10
+    elif 3.0 <= yoe < 4.0 or 11.0 < yoe <= 13.0: return 0.45
+    elif 13.0 < yoe <= 16.0:         return 0.40  # Senior — may be overqualified
+    elif yoe > 16.0:                 return 0.35  # Very senior — still consider
+    else:                            return 0.10  # Too junior
 
 
 def score_location_availability(candidate: dict) -> float:
@@ -365,7 +371,10 @@ def score_behavioral_signals(candidate: dict) -> float:
     else:                     recency = 0.08
 
     open_to_work   = 1.0 if sig.get("open_to_work_flag", False) else 0.40
-    response_rate  = float(sig.get("recruiter_response_rate", 0.0))
+    # Use neutral 0.70 default for missing response rate —
+    # absence of platform data should not penalize external candidates
+    raw_rr = sig.get("recruiter_response_rate", None)
+    response_rate  = float(raw_rr) if raw_rr is not None else 0.70
     notice         = sig.get("notice_period_days", 90)
     notice_score   = (1.00 if notice <= 15 else 0.90 if notice <= 30
                       else 0.65 if notice <= 60 else 0.45 if notice <= 90 else 0.20)

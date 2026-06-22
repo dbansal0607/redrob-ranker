@@ -1,5 +1,5 @@
 # Redrob Candidate Ranker — Configuration
-# Modify weights here without touching rank.py
+# All weights loaded dynamically — modify here without touching rank.py
 
 scoring_weights:
   skills: 0.32
@@ -8,28 +8,6 @@ scoring_weights:
   behavioral: 0.14
   location: 0.08
 
-experience_band:
-  sweet_spot_min: 6.0
-  sweet_spot_max: 8.0
-  acceptable_min: 5.0
-  acceptable_max: 9.0
-
-behavioral:
-  recency_weight: 0.28
-  open_to_work_weight: 0.22
-  response_rate_weight: 0.20
-  notice_period_weight: 0.15
-  interview_rate_weight: 0.08
-  github_weight: 0.04
-  completeness_weight: 0.03
-
-honeypot:
-  min_expert_zero_months: 5
-  min_expert_short_months: 3
-  short_months_threshold: 3
-  max_expert_skills: 10
-  career_months_ratio: 0.4
-
-output:
-  top_n: 100
-  tie_break: "candidate_id_asc"
+# Note: experience band thresholds, behavioral sub-weights, and honeypot
+# rules are defined directly in rank.py for clarity and type safety.
+# Only scoring_weights are loaded from this file at runtime.
