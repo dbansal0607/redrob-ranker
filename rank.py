@@ -14,6 +14,7 @@ import csv
 import argparse
 import logging
 import time
+import re
 import multiprocessing as mp
 from datetime import date
 from pathlib import Path
@@ -163,9 +164,25 @@ def days_ago(date_str: str) -> int:
     except Exception:
         return 9999
 
-def text_contains(text: str, tokens: set) -> int:
-    text_lower = text.lower()
-    return sum(1 for t in tokens if t in text_lower)
+# Precompiled regex patterns — built once at module load, not per candidate
+def _compile_pattern(tokens: set) -> re.Pattern:
+    """Build a single alternation pattern for all tokens (word-boundary safe)."""
+    # Sort longest first so 'sentence-transformer' matches before 'sentence'
+    sorted_tokens = sorted(tokens, key=len, reverse=True)
+    return re.compile(
+        r"\b(" + "|".join(re.escape(t) for t in sorted_tokens) + r")\b",
+        re.IGNORECASE
+    )
+
+def text_contains(text: str, tokens: set, _cache: dict = {}) -> int:
+    """Single-pass word-boundary token matching.
+    Uses a precompiled alternation regex — O(n) over text instead of O(n*m).
+    Prevents false positives: 'rag' won't match 'average', 'storage', etc.
+    """
+    key = id(tokens)
+    if key not in _cache:
+        _cache[key] = _compile_pattern(tokens)
+    return len(set(_cache[key].findall(text.lower())))
 
 def build_candidate_text(candidate: dict) -> str:
     parts = []
@@ -209,9 +226,8 @@ def is_honeypot(candidate: dict) -> bool:
     if yoe > 2 and total_months < (yoe * 12 * 0.4):
         return True
 
-    # Rule 4: ≥10 expert skills (implausible breadth)
-    if sum(1 for s in skills if s.get("proficiency") == "expert") >= 10:
-        return True
+    # Rule 4: Removed — 10+ expert skills is normal for 8+ yr senior engineers
+    # (kept as soft penalty in career scoring instead)
 
     return False
 
@@ -401,14 +417,18 @@ def compute_score(candidate: dict) -> tuple:
 # ─────────────────────────────────────────────────────────────────
 
 def _score_worker(candidate: dict) -> tuple:
-    """Worker function for multiprocessing pool."""
+    """Worker function for multiprocessing pool.
+    Returns only (score, candidate_id, breakdown) — NOT the full candidate dict.
+    The main process already holds candidates in memory; returning them over IPC
+    doubles RAM usage and creates serialization bottleneck.
+    """
     try:
         score, bd = compute_score(candidate)
-        return (score, candidate["candidate_id"], bd, candidate)
+        return (score, candidate["candidate_id"], bd)
     except Exception as e:
         cid = candidate.get("candidate_id", "UNKNOWN")
         log.warning(f"Error scoring {cid}: {e}")
-        return (0.0, cid, {"error": str(e)}, candidate)
+        return (0.0, cid, {"error": str(e)})
 
 # ─────────────────────────────────────────────────────────────────
 # Reasoning Generator
@@ -506,29 +526,33 @@ def main():
 
     # Score — multiprocessing if >10K candidates
     t1 = time.time()
+    # Build candidate lookup for O(1) access after scoring
+    candidate_lookup = {c["candidate_id"]: c for c in candidates}
+
     if len(candidates) > 10_000 and args.workers > 1:
         log.info(f"Scoring with {args.workers} workers …")
         with mp.Pool(args.workers) as pool:
-            scored = pool.map(_score_worker, candidates)
+            results = pool.map(_score_worker, candidates)
     else:
         log.info("Scoring (single process) …")
-        scored = [_score_worker(c) for c in candidates]
+        results = [_score_worker(c) for c in candidates]
 
-    honeypots = sum(1 for s in scored if s[2].get("honeypot"))
-    errors    = sum(1 for s in scored if s[2].get("error"))
-    log.info(f"Scored {len(scored):,} in {time.time()-t1:.1f}s | "
+    honeypots = sum(1 for r in results if r[2].get("honeypot"))
+    errors    = sum(1 for r in results if r[2].get("error"))
+    log.info(f"Scored {len(results):,} in {time.time()-t1:.1f}s | "
              f"honeypots={honeypots} | errors={errors}")
 
     # Sort & top-N
-    scored.sort(key=lambda x: (-x[0], x[1]))
-    top_n = scored[:args.topn]
+    results.sort(key=lambda x: (-x[0], x[1]))
+    top_n = results[:args.topn]
 
     # Write CSV
     out_path = Path(args.out)
     with open(out_path, "w", newline="", encoding="utf-8") as fh:
         writer = csv.writer(fh)
         writer.writerow(["candidate_id", "rank", "score", "reasoning"])
-        for rank, (score, cid, bd, candidate) in enumerate(top_n, 1):
+        for rank, (score, cid, bd) in enumerate(top_n, 1):
+            candidate = candidate_lookup[cid]
             writer.writerow([cid, rank, f"{score:.6f}",
                              generate_reasoning(candidate, bd, rank)])
 
@@ -536,8 +560,9 @@ def main():
     log.info(f"Total wall-clock: {time.time()-t0:.1f}s")
 
     # Top-10 preview
-    log.info("── Top 10 ──────────────────────────────────")
-    for rank, (score, cid, bd, c) in enumerate(top_n[:10], 1):
+    log.info("-- Top 10 --")
+    for rank, (score, cid, bd) in enumerate(top_n[:10], 1):
+        c = candidate_lookup[cid]
         p = c["profile"]
         log.info(f"#{rank:>2} {cid}  {score:.4f}  "
                  f"{p['current_title'][:30]:<30}  "

@@ -112,12 +112,9 @@ hp3["career_history"] = [
 ]
 check("Career months << claimed YOE → honeypot", rank.is_honeypot(hp3))
 
-hp4 = make_candidate()
-hp4["skills"] = [
-    {"name": f"Skill{i}", "proficiency": "expert", "duration_months": 12}
-    for i in range(11)
-]
-check("≥10 expert skills → honeypot", rank.is_honeypot(hp4))
+# Rule 4 removed — 10+ expert skills is normal for senior 8+ yr engineers
+# (was causing false positives disqualifying real top talent)
+# hp4 test intentionally removed per review feedback
 
 normal = make_candidate()
 check("Normal strong candidate → NOT honeypot", not rank.is_honeypot(normal))
