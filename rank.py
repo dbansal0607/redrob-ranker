@@ -134,7 +134,8 @@ def _compile(tokens):
 
 _CACHE = {}
 def text_contains(text, tokens):
-    key = id(tokens)
+    # Use frozenset as cache key (not id()) to avoid memory reuse collisions
+    key = frozenset(tokens)
     if key not in _CACHE: _CACHE[key] = _compile(tokens)
     return len(set(_CACHE[key].findall(text.lower())))
 
