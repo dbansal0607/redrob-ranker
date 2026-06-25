@@ -8,5 +8,7 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: "3.12"
+      - name: Install dependencies
+        run: pip install sentence-transformers numpy
       - name: Run unit tests
         run: python test_rank.py
