@@ -1,9 +1,16 @@
-# Redrob Ranker — Dependencies
-# Standard library only — no third-party packages required for ranking.
-# Python 3.9+ is sufficient.
+# Redrob Candidate Ranker — Dependencies
+
+# Core ranking (Stage 1): Python stdlib only
+# No install needed for rule-based stage.
+
+# Semantic reranking (Stage 2):
+sentence-transformers>=2.2.0   # all-MiniLM-L6-v2 bi-encoder
+numpy>=1.24                    # cosine similarity computation
+
+# Install with:
+#   pip install sentence-transformers numpy
 #
-# If you want to run the optional analysis notebook, install:
-# pandas>=2.0
-# numpy>=1.24
+# Then download model ONCE (works offline after):
+#   python download_model.py
 #
-# The ranking step itself (rank.py) has zero external dependencies.
+# Python 3.9+ required

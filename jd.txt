@@ -1,0 +1,41 @@
+Senior AI Engineer — Redrob AI (Series A, Founding Team)
+Location: Pune / Noida (Hybrid) | Experience: 5–9 years
+
+About the Role:
+We are building the intelligence layer for hiring at Redrob AI.
+As a Senior AI Engineer you will own the retrieval, ranking, and
+recommendation systems that power how candidates are discovered and matched.
+
+Core Requirements:
+- 5 to 9 years of experience in applied machine learning at product companies
+- Production experience with embedding-based retrieval systems
+- Hands-on with vector databases: Pinecone, Weaviate, Qdrant, Milvus, FAISS
+- Experience with hybrid search combining dense and sparse retrieval (BM25)
+- Strong understanding of ranking evaluation: NDCG, MRR, MAP, Precision@K
+- Built and shipped semantic search or recommendation systems to production
+- Proficient in Python; writes clean, testable, production-grade code
+- Experience with sentence-transformers, BGE, E5, or similar bi-encoders
+- Familiar with cross-encoders and two-stage retrieval architectures
+- Has designed evaluation frameworks for ranking quality offline and online
+- Experience with A/B testing and experimentation for ranking systems
+
+Ideal Candidate:
+- 6 to 8 years total, with 4 to 5 years in applied ML at product companies
+- Has shipped a ranking or recommendation or retrieval system end to end
+- Understands the difference between offline and online evaluation
+- Product-first mindset — ships fast, iterates based on metrics
+- Currently based in India, preferably Pune or Noida
+
+What You Will Build:
+- Candidate discovery and ranking pipelines processing millions of profiles
+- Hybrid retrieval systems combining semantic and keyword search
+- Evaluation frameworks measuring ranking quality with NDCG and MRR
+- Real-time reranking using behavioral signals and context
+- Embeddings infrastructure for candidate and job description representation
+
+Not a Fit:
+- Pure research background without production deployment experience
+- Only consulting firm experience (TCS, Infosys, Wipro, Accenture, Cognizant)
+- Primary expertise in computer vision, speech, or robotics without NLP or IR
+- Has not written code in the last 18 months (moved to architecture only)
+- Only API-calling experience with LangChain or OpenAI without pre-LLM background
