@@ -2,13 +2,19 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Copy source
-COPY rank.py .
+# Install dependencies
 COPY requirements.txt .
-COPY validate_submission.py .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# No pip install needed — stdlib only
-# This just documents the runtime environment
+# Pre-download and cache the model (runs once during build)
+COPY download_model.py .
+RUN python download_model.py
+
+# Copy source files
+COPY rank.py .
+COPY config.yaml .
+COPY jd.txt .
+COPY validate_submission.py .
 
 CMD ["python", "rank.py", \
      "--candidates", "/data/candidates.jsonl", \
