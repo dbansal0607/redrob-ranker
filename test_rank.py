@@ -124,12 +124,12 @@ check("Normal strong candidate → NOT honeypot", not rank.is_honeypot(normal))
 # ── 2. Experience Band Scoring ───────────────────────────────────
 print("\n2. Experience Band Scoring")
 
-check("YOE=7 → score 1.0",   rank.score_experience_band(make_candidate(yoe=7.0)) == 1.0)
-check("YOE=6 → score 1.0",   rank.score_experience_band(make_candidate(yoe=6.0)) == 1.0)
-check("YOE=5 → score 0.88",  rank.score_experience_band(make_candidate(yoe=5.0)) == 0.88)
-check("YOE=9 → score 0.88",  rank.score_experience_band(make_candidate(yoe=9.0)) == 0.88)
-check("YOE=2 → score < 0.5", rank.score_experience_band(make_candidate(yoe=2.0)) < 0.5)
-check("YOE=15 → score < 0.5",rank.score_experience_band(make_candidate(yoe=15.0)) < 0.5)
+check("YOE=7 → score 1.0",   rank.score_exp(make_candidate(yoe=7.0)) == 1.0)
+check("YOE=6 → score 1.0",   rank.score_exp(make_candidate(yoe=6.0)) == 1.0)
+check("YOE=5 → score 0.88",  rank.score_exp(make_candidate(yoe=5.0)) == 0.88)
+check("YOE=9 → score 0.88",  rank.score_exp(make_candidate(yoe=9.0)) == 0.88)
+check("YOE=2 → score < 0.5", rank.score_exp(make_candidate(yoe=2.0)) < 0.5)
+check("YOE=15 → score < 0.5",rank.score_exp(make_candidate(yoe=15.0)) < 0.5)
 
 # ── 3. Career Trajectory — Wrong Title Hard Gate ─────────────────
 print("\n3. Career Trajectory — Wrong Title Gate")
