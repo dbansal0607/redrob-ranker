@@ -1,62 +1,100 @@
 # Redrob India Runs — Intelligent Candidate Discovery & Ranking
 
-**Submission by:** Dhruv Bansal (Solo)  
-**Hackathon:** Redrob India Runs — Data & AI Challenge  
+**Submission by:** Dhruv Bansal (Solo)
+**Hackathon:** Redrob India Runs — Data & AI Challenge
 **GitHub:** https://github.com/dbansal0607/redrob-ranker
 
 ---
 
-## Reproduce in One Command
+## Reproduce in Three Commands
 
 ```bash
+pip install sentence-transformers numpy   # install dependencies (once)
+python download_model.py                  # download model locally (once)
 python rank.py --candidates ./candidates.jsonl --out ./submission.csv
 ```
 
-- Runtime: ~60 seconds on CPU (well within 5-minute limit)
+- Runtime: ~2.5 minutes on CPU (well within 5-minute limit)
 - Memory: ~1.5 GB peak (well within 16 GB limit)
-- Network: zero external calls
+- Network: zero calls during ranking (model pre-downloaded)
 - GPU: not used
 
 ---
 
-## Approach Overview
+## Architecture — Two-Stage Hybrid Ranker
 
-**Multi-signal rule-based ranker with explicit reasoning capture.**
+```
+[candidates.jsonl]
+        ↓
+[Stage 1: Rule Filter]          ~30s
+100,000 → 2,000 candidates
+Title gate + honeypot detection +
+experience band + consulting penalty +
+behavioral availability multiplier
+        ↓
+[Stage 2: Semantic Reranker]    ~90s
+2,000 → top-100 candidates
+all-MiniLM-L6-v2 bi-encoder
+JD vs candidate career text cosine similarity
+        ↓
+[submission.csv + per-candidate reasoning]
+```
 
-Rather than pure keyword matching, this system reasons about *what the JD actually means* — reading career history descriptions, computing a product-company ratio, detecting title mismatches, and applying behavioral signals as a real-time availability multiplier.
+**Final score = 0.45 x rule_score + 0.55 x semantic_score**
 
-### Five Scoring Pillars
+---
+
+## Why Two Stages?
+
+A rule-only ranker misses candidates who describe production ML work
+in plain English without AI buzzwords. For example:
+
+> "Built system finding similar documents using dense vector
+> representations and approximate search indexes"
+
+This candidate has FAISS + embedding experience but no keyword
+matches. Stage 2 catches them via semantic similarity to the JD.
+
+---
+
+## Five Scoring Pillars (Stage 1)
 
 | Pillar | Weight | What it measures |
 |---|---|---|
-| Technical Skills | 32% | Core skill match via both skills array + career description text |
+| Technical Skills | 32% | Core skill match via skills array + career description text |
 | Career Trajectory | 28% | Product company ratio, title fit, production ML signals, job-hopping penalty |
-| Experience Band | 18% | 5–9 yr sweet spot (ideal: 6–8 per JD's "ideal candidate" section) |
+| Experience Band | 18% | 5-9 yr sweet spot (ideal: 6-8 per JD) |
 | Behavioral Availability | 14% | Recency, response rate, notice period, open-to-work flag |
-| Location | 8% | Pune/Noida/Tier-1 India priority; non-India penalised (no visa sponsorship per JD) |
+| Location | 8% | Pune/Noida/Tier-1 India priority |
 
-### Key Design Decisions
+---
 
-**1. Dual text corpus for skill detection**  
-Skills array + full free-text (career descriptions + summary + headline). This catches "plain-language Tier 5" candidates who describe embedding-based retrieval work in job descriptions but don't use the exact buzzword in their skills list.
+## Key Design Decisions
 
-**2. Hard career gate against keyword stuffers**  
-If the current title matches any WRONG_TITLE_TOKENS (marketing manager, HR manager, content writer, etc.), career score floors at 0.04 — making it nearly impossible for keyword stuffers to rank in the top 100 regardless of how many AI skills they list.
+**1. Word-boundary regex matching**
+Single precompiled alternation pattern — prevents "rag" matching
+"average", "storage", "fragment". O(n) over text instead of O(n x m).
 
-**3. Consulting ratio penalty**  
-Career history is scanned for known IT services firms (TCS, Infosys, Wipro, Accenture, Cognizant, Capgemini, etc.). A candidate with 95%+ of career at consulting firms receives a 0.05 product score per JD's explicit disqualifier.
+**2. Hard career gate against keyword stuffers**
+Wrong title (HR Manager, Marketing Manager etc.) → career score 0.04
+regardless of how many AI skills are listed.
 
-**4. Behavioral multiplier anchored to real-time signals**  
-Response rate, days-since-active, notice period, and open-to-work flag are combined into a behavioral score. A candidate inactive for 6+ months scores ~0.08 on recency alone, directly implementing the JD's note that such candidates are "not actually available for hiring purposes."
+**3. Consulting ratio penalty**
+TCS/Infosys/Wipro/Accenture/Cognizant/Capgemini etc. — 95%+ consulting
+career → product score 0.05.
 
-**5. Honeypot detection**  
-Four heuristics catch impossible profiles:
-- ≥5 skills at expert/advanced proficiency with 0 months duration
-- ≥3 skills at expert proficiency with <3 months duration  
-- Total career months < 40% of claimed YOE
-- ≥10 expert-level skills (implausibly broad expertise)
+**4. Neutral behavioral defaults**
+Missing recruiter_response_rate defaults to 0.70, not 0.0 — protects
+external candidates with no platform history.
 
-Flagged candidates receive score ≈ 0.001 and never appear in the top 100.
+**5. Honeypot detection (3 rules)**
+- 5+ expert/advanced skills with 0 months duration
+- 3+ expert skills with less than 3 months duration
+- Career months less than 40% of claimed YOE
+
+**6. Softened experience banding**
+13+ YOE candidates score 0.35-0.40 instead of 0.25 — senior talent
+is not disqualified, just slightly penalized for being overqualified.
 
 ---
 
@@ -64,27 +102,16 @@ Flagged candidates receive score ≈ 0.001 and never appear in the top 100.
 
 ```
 redrob-ranker/
-├── rank.py                       # Main ranker — single entry point
-├── requirements.txt              # No external dependencies
-├── submission_metadata.yaml      # Portal metadata (fill before uploading)
-├── validate_submission.py        # Format validator (provided by organizers)
-├── README.md                     # This file
-└── submission.csv                # Generated output (not committed to repo)
+├── rank.py                  # Two-stage ranker — main entry point
+├── download_model.py        # Run once to cache model locally
+├── jd.txt                   # Job description for semantic embedding
+├── config.yaml              # Scoring weights (edit without touching code)
+├── requirements.txt         # sentence-transformers, numpy
+├── test_rank.py             # 36 unit tests — all passing
+├── validate_submission.py   # Official format validator
+├── Dockerfile               # Containerized reproducible environment
+└── README.md                # This file
 ```
-
----
-
-## Running on a Small Sample (Sandbox)
-
-For the sandbox/demo environment, you can run on a sample input:
-
-```bash
-# Use any subset of candidates.jsonl as input
-head -n 1000 candidates.jsonl > sample_1000.jsonl
-python rank.py --candidates sample_1000.jsonl --out sample_submission.csv --topn 100
-```
-
-Note: with <100 unique candidates in the pool, `--topn` is automatically capped.
 
 ---
 
@@ -97,21 +124,32 @@ python validate_submission.py submission.csv
 
 ---
 
-## Architecture Notes
+## Running Tests
 
-- **Zero external dependencies**: stdlib only (`json`, `csv`, `argparse`, `datetime`, `pathlib`, `time`, `gzip`)
-- **Streaming-friendly**: processes candidates one line at a time from JSONL
-- Accepts both `.jsonl` and `.jsonl.gz` inputs
-- All scoring is deterministic — same input always produces same output
-- Tie-breaking follows spec: equal scores resolved by `candidate_id` ascending
+```bash
+python test_rank.py
+# Expected: 36 passed, 0 failed — All tests passed!
+```
+
+---
+
+## Docker (fully reproducible)
+
+```bash
+docker build -t redrob-ranker .
+docker run -v $(pwd):/data redrob-ranker
+```
+
+Model is baked into the Docker image during build — no internet needed at runtime.
 
 ---
 
 ## Compute Environment
 
-- Platform: Windows 11 / WSL2 Ubuntu 24.04
+- Platform: Windows 11 / PowerShell
 - Python: 3.12
-- CPU cores: available system cores (single-threaded scoring loop)
-- RAM: ~1.5 GB peak usage
+- Dependencies: sentence-transformers, numpy
+- CPU: multiprocessing enabled (auto-detects core count)
+- RAM: ~1.5 GB peak
 - GPU: not used
-- Network during ranking: none
+- Network during ranking: zero calls
