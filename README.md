@@ -1,7 +1,9 @@
 # Redrob India Runs — Intelligent Candidate Discovery & Ranking
 
 **Submission by:** Dhruv Bansal (Solo)
+
 **Hackathon:** Redrob India Runs — Data & AI Challenge
+
 **GitHub:** https://github.com/dbansal0607/redrob-ranker
 
 ---
